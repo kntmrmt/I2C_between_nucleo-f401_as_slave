@@ -31,7 +31,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define I2C1_SLAVE_ADDRESS 40 // 0d20 << 1
+#define I2C_RECEIVE_MESSAGE_SIZE 32 // receiving message: "[I2C DATA] Hi, This is Master\r\n"
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -72,7 +73,10 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  HAL_StatusTypeDef i2c1_hal_status;
+  uint8_t i2c1_receive_message [I2C_RECEIVE_MESSAGE_SIZE];
+  uint8_t status_message_success[] = "[I2C slave] Success\r\n";
+  uint8_t status_message_fail[] = "[I2C slave] Fail\r\n";
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -97,7 +101,26 @@ int main(void)
   MX_I2C1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  HAL_Delay(1000);
 
+  //Receiving in Blocking mode
+  i2c1_hal_status = HAL_I2C_Slave_Receive(&hi2c1, i2c1_receive_message, sizeof(i2c1_receive_message), HAL_MAX_DELAY);
+  
+  //Receiving in Interrupt mode
+  // i2c1_hal_status = HAL_I2C_Slave_Receive_IT(&hi2c1 , (uint8_t *)i2c1_receive_message, I2C_RECEIVE_MESSAGE_SIZE);
+  
+  //Receiving in DMA mode
+  // i2c1_hal_status = HAL_I2C_Slave_Receive_DMA(&hi2c1 , (uint8_t *)i2c1_receive_message, I2C_RECEIVE_MESSAGE_SIZE);
+  
+  if (i2c1_hal_status == HAL_OK)
+  {
+    HAL_UART_Transmit(&huart2, status_message_success, sizeof(status_message_success), 10);// Sending in normal mode
+    HAL_UART_Transmit(&huart2, i2c1_receive_message, sizeof(i2c1_receive_message), 10);// Sending in normal mode
+  }
+  else
+  {
+    HAL_UART_Transmit(&huart2, status_message_fail, sizeof(status_message_fail), 10);// Sending in normal mode
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -170,7 +193,7 @@ static void MX_I2C1_Init(void)
   hi2c1.Instance = I2C1;
   hi2c1.Init.ClockSpeed = 100000;
   hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c1.Init.OwnAddress1 = 40;
+  hi2c1.Init.OwnAddress1 = I2C1_SLAVE_ADDRESS;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
   hi2c1.Init.OwnAddress2 = 0;
